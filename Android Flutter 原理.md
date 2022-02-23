@@ -1,5 +1,39 @@
 # Android Flutter 原理
 
+# embedding 各类的作用
+- **【app】**:旧版嵌入层实现，现已弃用
+- **【embedding】**: 新版嵌入层的实现
+  - **【android】**：Android 平台相关代码
+    - AndroidTouchProcessor：向 Flutter 传递用户触摸的格式化信息
+    - ExclusiveAppComponent：用于链接 FlutterEngine 的 Android 组件的接口
+    - FlutterActivity：Flutter 页面的容器
+    - FlutterActivityAndFragmentDelegate：FlutterActivity 和 FlutterFragment 的公共部分
+    - FlutterActivityLaunchConfigs：启动配置文件，包括 Entrypoint、InitialRoute、cached_engine_id 等
+    - FlutterEngineConfigurator：Engine 创建之后对其进行配置， 可以在 FragmentActivity 中使用
+    - FlutterEngineProvider：为 FlutterActivity 和 FlutterFragment 提供引擎
+    - FlutterFragment：比 FlutterActivity 更轻量的容器
+    - FlutterFragmentActivity：基于  FragmentActivity 的 Flutter Activity，因为有些 Android API 只能用在 FragmentActivity 上。如果你没有这块的需求，请直接使用 FlutterActivity，因为这是最标准的实现。
+    - FlutterImageView：通过 ImageReader 向 Canvas 绘制 Flutter UI。通常是在需要绘制 Flutter UI 还要渲染一个 PlatformView 的时候使用这个 View。
+    - FlutterPlayStoreSplitApplication：用于实现 PlayStore 的延迟下发组件能力的扩展类。
+    - FlutterSplashView：在 FlutterView 渲染首帧之前展示一个开屏页。
+    - FlutterSurfaceView：在 Surface 上绘制 Flutter UI。
+    - FlutterTextureView：在 SurfaceTexture 上绘制 Flutter UI。
+    - FlutterView：由 FlutterEngine 绘制 Flutter UI 到 FlutterView 上。
+    - KeyboardManager：向 Flutter 传递键盘事件
+    - KeyChannelResponder：提供传递键盘事件的 Channel
+    - MotionEventTracker：追踪 FlutterView 收到的 Motion 事件。
+    - RenderMode：绘制模式，有三种：surface、texture、image
+    - TransparencyMode：用于是否开启透明的 FlutterView，只能在 FlutterSurfaceView 上使用。
+  - **【engine】**：Dart 虚拟机以及引擎相关实现
+- **【plugin】**：插件相关实现
+- **【util】**：工具辅助类
+- **【view】**：无障碍相关的链接层
+- BuildConfig：构建模式的配置（DEBUG | PROFILE | RELEASE | JIT_RELEASE）
+- FlutterInjector：轻量的 Flutter 依赖注入类
+- Log：用于打印 Flutter 相关日志
+
+
+
 ## FlutterActivity
 
 ### 职责
@@ -24,7 +58,7 @@
 > > tree shaking：一种用于在编译期移除无用代码的技术，主要目的是缩小包体积。
 >
 > #### 起始路由（initial route）
->
+> 
 > 这个 Activity 会去找 Flutter 中的 `/` 作为起始路由。你也可以使用 `FlutterActivityLaunchConfigs` 中 的 `EXTRA_INITIAL_ROUTE` 配置初始路由。
 >
 > #### 如何改写 app bundle 的路径、Dart 执行入口 （entrypoint）、以及起始路由（initial route）
@@ -35,8 +69,9 @@
 > - `getDartEntrypointFunctionName()`
 > - `getInitialRoute()`
 
-### 使用缓存的引擎
+### 引擎
 
+#### 引擎缓存
 你可以使用 `withCachedEngine("String")` 来获得一个缓存的引擎，而不是每次都创建一个新的。`io.flutter.embedding.engine.FlutterEngineCache` 用来保存缓存的引擎。在使用这个 `withCachedEngine(String)` 构造器之前，你必须创建一个 `Engine`，并把它放进 `FlutterEngineCache` 中，否则就会抛出 `IllegalStateException`。
 
 >  ⚠️： 当你使用缓存的引擎的时候，这个引擎应该已经执行了 Dart 代码了，这意味着 **Dart 执行入口 （entrypoint）**、以及**起始路由（initial route）** 都已经被决定了。因此 `CachedEngineIntentBuilder` 并不提供这些入参。
@@ -57,7 +92,18 @@
  FlutterEngineCache.getInstance().put("my_engine", flutterEngine);
 ```
 
-### FlutterFragment
+#### 如何使用自定义的引擎
+子类重写 `provideFlutterEngine` 提供一个引擎
+``` java
+  @Override
+  public FlutterEngine provideFlutterEngine(@NonNull Context context) {
+    // No-op. Hook for subclasses.
+    return null;
+  }
+
+```
+
+### 使用 FlutterFragment
 
 如果有一些场景无法使用 Activity，你可以考虑使用 `FlutterFragment`。 
 
@@ -114,6 +160,35 @@
 * {@code FlutterActivity}, if possible, but if you need a {@code FragmentActivity} then you should
 * use {@link FlutterFragmentActivity}.
 */
+```
+
+------------------------------------------------------------------------------------------------
+### 创建 Activity 生命周期变化
+
+```
+I/FlutterActivity(20602): onCreate
+I/FlutterActivity(20602): provideFlutterEngine
+I/FlutterActivity(20602): getFlutterShellArgs
+I/FlutterActivity(20602): shouldRestoreAndSaveState
+I/FlutterActivity(20602): getCachedEngineId
+I/FlutterActivity(20602): shouldAttachEngineToActivity
+I/FlutterActivity(20602): getLifecycle
+I/FlutterActivity(20602): providePlatformPlugin
+I/FlutterActivity(20602): configureFlutterEngine
+I/FlutterActivity(20602): shouldRestoreAndSaveState
+I/FlutterActivity(20602): shouldAttachEngineToActivity
+I/FlutterActivity(20602): onFlutterSurfaceViewCreated
+I/FlutterActivity(20602): provideSplashScreen
+I/FlutterActivity(20602): getRenderMode
+I/FlutterActivity(20602): getBackgroundMode
+I/FlutterActivity(20602): onStart
+I/FlutterActivity(20602): getInitialRoute
+I/FlutterActivity(20602): shouldHandleDeeplinking
+I/FlutterActivity(20602): getDartEntrypointFunctionName
+I/FlutterActivity(20602): getAppBundlePath
+I/FlutterActivity(20602): getDartEntrypointFunctionName
+I/FlutterActivity(20602): onResume
+I/FlutterActivity(20602): onPostResume
 ```
 
 ### 生命周期时序 1：构造器
@@ -173,7 +248,6 @@
 > ```
 
 
-
 ### ⚠️ 生命周期时序 2.1：FlutterActivityAndFragmentDelegate 的 onAttach
 
 **FlutterActivityAndFragmentDelegate**: 该类实现了 `FlutterActivity` 与 `FlutterFragment` 之间的共有逻辑。
@@ -183,7 +257,8 @@
   - 如果 FlutterEngine 为空，则初始化一个。`FlutterActivityAndFragmentDelegate.setupFlutterEngine()`。
   - 让 engine attach 到 FlutterActivity 上。（注意这里是 attach Activity 比 attach FlutterView 要更早）
     - 如果 FlutterEngineConnectionRegistry 的 exclusiveActivity 不为空，则先让 engine 从这个 Activity 上 detach 下来。【`FlutterEngineConnectionRegistry` 被 FlutterEngine 持有，它的作用是管理和 Android App Components 与 Flutter Plugin 之间的关系】
-  - 调用 `FlutterActivity` 的 `configureFlutterEngine` 注册 Plugin 的各种 Channel。
+  - ⚠️调用 `FlutterActivity` 的 `configureFlutterEngine` 注册 Plugin 的各种 Channel。
+    - 通过  `GeneratedPluginRegister.registerGeneratedPlugins(flutterEngine);` 注册 Plugin 到 FlutterEngine。
 
 > 发现的信息：
 >
@@ -196,8 +271,6 @@
 > 1. 首先判断是否用 Cache 的引擎。
 > 2. 然后通过 `Host#provideFlutterEngine(Context)` 尝试从 host 中去拿引擎。
 > 3. 如果前两种都失败了，就创建一个新的引擎。
-
-
 
 ### 生命周期时序 3：onStart
 
@@ -223,12 +296,77 @@
 ### 生命周期时序 4：onResume
 
 - ` onResume()`
+  - 更新生命周期 `lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);`
+    - 执行 onPostResume，去更新 Android Window 的系统 UI `updateSystemUiOverlays`
+  - ⚠️ 检查 delegate 是否 `attached：stillAttachedForEvent`
+    - ⚠️ delegate 执行 onResume，向 flutterEngine 通知应用已经进入可视状态 `flutterEngine.getLifecycleChannel().appIsResumed();`
+
+### 生命周期时序 4.1：onFirstFrame **构建首帧(FlutterJNI)**
+
+- 确保运行在主线程上 `ensureRunningOnMainThread`
+- 通知所有的 `FlutterUiDisplayListener`，Flutter 开始渲染 UI 了（这个时候还是黑的，没有真正渲染出来）`onFlutterUiDisplayed`
+
+-------------------------------------------------------------------------------------------
+### FlutterActivity 退到后台时生命周期变化
+```
+I/FlutterActivity(20603): onUserLeaveHint
+I/FlutterActivity(20603): onPause
+I/FlutterActivity(20603): onFlutterUiNoLongerDisplayed
+I/FlutterActivity(20603): onTrimMemory
+I/FlutterActivity(20603): onStop
+I/FlutterActivity(20603): onSaveInstanceState
+I/FlutterActivity(20603): shouldRestoreAndSaveState
+I/FlutterActivity(20603): getCachedEngineId
+I/FlutterActivity(20603): shouldAttachEngineToActivity
+```
 
 
+### 生命周期时序 5：onUserLeaveHint
+- 通知 PluginBinding 执行 onUserLeaveHint （用户要离开界面了）
 
-## FlutterActivityAndFragmentDelegate
+### 生命周期时序 6：onPause -> AppLifecycleState.inactive
+- 让 delegate 先去执行 onPause
+  - Delegate 去告诉 Flutter App 要变得不活跃了，通过引擎获取 LifecycleChannel 发送 `AppLifecycleState.inactive` 事件。
+- 更新生命周期 `lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);`
+-------------------------------------------------------------------------------------------
 
-该类实现了 `FlutterActivity` 与 `FlutterFragment` 之间的共有逻辑。
+### FlutterActivity 从后台到前台的生命周期变化
+```
+I/FlutterActivity(20603): onStart
+I/FlutterActivity(20603): getCachedEngineId
+I/FlutterActivity(20603): onNewIntent
+I/FlutterActivity(20603): shouldHandleDeeplinking
+I/FlutterActivity(20603): getMetaData
+I/FlutterActivity(20603): onResume
+I/FlutterActivity(20603): onPostResume
+I/FlutterActivity(20603): onFlutterUiDisplayed
+```
+
+### FlutterActivity 销毁生命周期变化
+```
+I/FlutterActivity(20603): onPause
+I/FlutterActivity(20603): onFlutterUiNoLongerDisplayed
+I/FlutterActivity(20603): onTrimMemory
+I/FlutterActivity(20603): onStop
+I/FlutterActivity(20603): onSaveInstanceState
+I/FlutterActivity(20603): shouldRestoreAndSaveState
+I/FlutterActivity(20603): getCachedEngineId
+I/FlutterActivity(20603): shouldAttachEngineToActivity
+I/FlutterActivity(20603): onDestroy
+I/FlutterActivity(20603): cleanUpFlutterEngine
+I/FlutterActivity(20603): shouldAttachEngineToActivity
+I/FlutterActivity(20603): getActivity
+I/FlutterActivity(20603): getActivity
+I/FlutterActivity(20603): shouldDestroyEngineWithHost
+I/FlutterActivity(20603): getCachedEngineId
+Lost connection to device.
+```
+
+## 平台插件实现类 PlatformPlugin
+
+-------------------------------------------------------------------------------------------
+
+##  `FlutterActivity` 与 `FlutterFragment` 之间的共有逻辑 FlutterActivityAndFragmentDelegate
 
 Fragment support library 会让应用程序多出 100k 的二进制大小，纯 Flutter 应用不需要这段二进制。因此，Flutter 必须为 add-to-app 开发者提供一个基于 AOSP 的 Activity，以及一个独立的 FlutterFragment。
 
@@ -240,3 +378,9 @@ Fragment support library 会让应用程序多出 100k 的二进制大小，纯 
 
 所以你需要谨慎考虑添加代码到 delegate 还是 FlutterActivity / FlutterFragment。
 
+
+## Flutter 应用生命周期状态 LifecycleChannel
+- **inactive 不活跃（onPause）**：在 FlutterActivity 或者 FlutterFragment onPause 的时机会进入 inactive 状态
+- **resumed 恢复（onResume）**：在 FlutterActivity 或者 FlutterFragment onResume 的时机会进入 inactive 状态
+- **paused 暂停（onStop）**：仅在 FlutterActivity 的 onStop 下会进入 paused 状态
+- **detached 移除（onDestroy / detachFromFlutterEngine）**：在 FlutterActivityAndFragmentDelegate 的 onDetach 的时候会被调用。最终是在 FlutterActivity 或者 FlutterFragment 的 detachFromFlutterEngine 或者 onDestroy 会进入 detached 状态
