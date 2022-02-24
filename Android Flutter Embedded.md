@@ -19,7 +19,7 @@
 
 
 ### Engine 层
- - FlutterEngine：Flutter 引擎
+ - FlutterEngine：Flutter 引擎，各种资源的持有者（renderer | dartExecutor | pluginRegistry | flutterJNI | Channel） 等等
  - FlutterEngineCache：通过一个 id 进行引擎缓存的机制
  - FlutterEngineConnectionRegistry：管理 Android App Components 和 Flutter 插件的连接
  - FlutterEngineGroup：一种共享资源的多引擎创建方式，带来极少的开销
