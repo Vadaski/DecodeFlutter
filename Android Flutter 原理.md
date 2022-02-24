@@ -6,25 +6,39 @@
   - **【android】**：Android 平台相关代码
     - AndroidTouchProcessor：向 Flutter 传递用户触摸的格式化信息
     - ExclusiveAppComponent：用于链接 FlutterEngine 的 Android 组件的接口
-    - FlutterActivity：Flutter 页面的容器
-    - FlutterActivityAndFragmentDelegate：FlutterActivity 和 FlutterFragment 的公共部分
-    - FlutterActivityLaunchConfigs：启动配置文件，包括 Entrypoint、InitialRoute、cached_engine_id 等
-    - FlutterEngineConfigurator：Engine 创建之后对其进行配置， 可以在 FragmentActivity 中使用
-    - FlutterEngineProvider：为 FlutterActivity 和 FlutterFragment 提供引擎
-    - FlutterFragment：比 FlutterActivity 更轻量的容器
+    - ⚠️ FlutterActivity：Flutter 页面的容器
+    - ⚠️ FlutterActivityAndFragmentDelegate：FlutterActivity 和 FlutterFragment 的公共部分
+    - ⚠️ FlutterActivityLaunchConfigs：启动配置文件，包括 Entrypoint、InitialRoute、cached_engine_id 等
+    - ⚠️ FlutterEngineConfigurator：Engine 创建之后对其进行配置， 可以在 FragmentActivity 中使用
+    - ⚠️ FlutterEngineProvider：为 FlutterActivity 和 FlutterFragment 提供引擎
+    - ⚠️ FlutterFragment：比 FlutterActivity 更轻量的容器
     - FlutterFragmentActivity：基于  FragmentActivity 的 Flutter Activity，因为有些 Android API 只能用在 FragmentActivity 上。如果你没有这块的需求，请直接使用 FlutterActivity，因为这是最标准的实现。
-    - FlutterImageView：通过 ImageReader 向 Canvas 绘制 Flutter UI。通常是在需要绘制 Flutter UI 还要渲染一个 PlatformView 的时候使用这个 View。
+    - ⚠️ FlutterImageView：通过 ImageReader 向 Canvas 绘制 Flutter UI。通常是在需要绘制 Flutter UI 还要渲染一个 PlatformView 的时候使用这个 View。
     - FlutterPlayStoreSplitApplication：用于实现 PlayStore 的延迟下发组件能力的扩展类。
     - FlutterSplashView：在 FlutterView 渲染首帧之前展示一个开屏页。
-    - FlutterSurfaceView：在 Surface 上绘制 Flutter UI。
-    - FlutterTextureView：在 SurfaceTexture 上绘制 Flutter UI。
-    - FlutterView：由 FlutterEngine 绘制 Flutter UI 到 FlutterView 上。
+    - ⚠️ FlutterSurfaceView：在 Surface 上绘制 Flutter UI。
+    - ⚠️ FlutterTextureView：在 SurfaceTexture 上绘制 Flutter UI。
+    - ⚠️ FlutterView：由 FlutterEngine 绘制 Flutter UI 到 FlutterView 上。
     - KeyboardManager：向 Flutter 传递键盘事件
     - KeyChannelResponder：提供传递键盘事件的 Channel
     - MotionEventTracker：追踪 FlutterView 收到的 Motion 事件。
-    - RenderMode：绘制模式，有三种：surface、texture、image
-    - TransparencyMode：用于是否开启透明的 FlutterView，只能在 FlutterSurfaceView 上使用。
-  - **【engine】**：Dart 虚拟机以及引擎相关实现
+    - ⚠️ RenderMode：绘制模式，有三种：surface、texture、image
+    - ⚠️ TransparencyMode：用于是否开启透明的 FlutterView，只能在 FlutterSurfaceView 上使用。
+  - **【engine】**：Dart 虚拟机以及引擎渲染相关实现
+    - **【dart】**：Dart 执行相关类
+    - **【deferredcomponents】**：延迟加载相关的类
+    - **【loader】**：加载 Flutter 和 Native 相关的资源/类
+    - **【mutatorsstack】**：用于调整原生控件接入到 FlutterView 的位置和 Matrix
+    - **【plugins】**：插件与引擎相关
+    - **【Renderer】**：引擎中负责渲染的部分
+    - **【systemchannels】**：Flutter 与系统交互所用到的各种 Channel
+    - ⚠️ FlutterEngine：Flutter 引擎
+    - ⚠️ FlutterEngineCache：通过一个 id 进行引擎缓存的机制
+    - ⚠️ FlutterEngineConnectionRegistry：管理 Android App Components 和 Flutter 插件的连接
+    - ⚠️ FlutterEngineGroup：一种共享资源的多引擎创建方式，带来极少的开销
+    - ⚠️ FlutterJNI：Flutter embedding 层的 Java 代码和 Flutter engine's C/C++ code 之间的接口
+    - FlutterOverlaySurface：提供一个 surface
+    - FlutterShellArgs：编译参数
 - **【plugin】**：插件相关实现
 - **【util】**：工具辅助类
 - **【view】**：无障碍相关的链接层
