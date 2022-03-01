@@ -18,7 +18,7 @@
     - FlutterSplashView：在 FlutterView 渲染首帧之前展示一个开屏页。
     - ⚠️ FlutterSurfaceView：在 Surface 上绘制 Flutter UI。
     - ⚠️ FlutterTextureView：在 SurfaceTexture 上绘制 Flutter UI。
-    - ⚠️ FlutterView：由 FlutterEngine 绘制 Flutter UI 到 FlutterView 上。
+    - ⚠️ FlutterView：由 FlutterEngine 绘制 Flutter UI 到 FlutterView 上，它会持有 FlutterTextureView 或者 FlutterSurfaceView。
     - KeyboardManager：向 Flutter 传递键盘事件
     - KeyChannelResponder：提供传递键盘事件的 Channel
     - MotionEventTracker：追踪 FlutterView 收到的 Motion 事件。
@@ -241,6 +241,7 @@ I/FlutterActivity(20602): onPostResume
     > 5. ⚠️ 在这个生命周期绑定 Renderer，初始化 textInputPlugin、KeyboardManager、AndroidTouchProcessor、AccessibilityBridge 等等各种基础能力 channel 的初始化。
     > 6. ⚠️ 可以通过 `FlutterView` 的 `FlutterEngineAttachmentListener` 获得引擎 Attached 到 FlutterView 的回调。
     > 7. ⚠️ 可以通过 `FlutterView` 的 `FlutterUiDisplayListener` 来获取 Flutter开始渲染和即将脱离渲染的时机。
+    > 8. 如果是 surface 模式则会 delay 首次的渲染
 
 > ### ⚠️ 如何获取 FlutterActivity 生命周期状态
 >
@@ -261,7 +262,7 @@ I/FlutterActivity(20602): onPostResume
 >  });
 > ```
 
-
+    
 ### ⚠️ 生命周期时序 2.1：FlutterActivityAndFragmentDelegate 的 onAttach
 
 **FlutterActivityAndFragmentDelegate**: 该类实现了 `FlutterActivity` 与 `FlutterFragment` 之间的共有逻辑。
@@ -283,7 +284,7 @@ I/FlutterActivity(20602): onPostResume
 > `FlutterActivityAndFragmentDelegate.setupFlutterEngine()`
 >
 > 1. 首先判断是否用 Cache 的引擎。
-> 2. 然后通过 `Host#provideFlutterEngine(Context)` 尝试从 host 中去拿引擎。
+> 2. 然后通过 `Host#provideFlutterEngine(Context)` 尝试从 host 中去拿引擎。（这里 host 就是对应的 FlutterActivity / FlutterFragment）
 > 3. 如果前两种都失败了，就创建一个新的引擎。
 
 ### 生命周期时序 3：onStart
@@ -298,7 +299,7 @@ I/FlutterActivity(20602): onPostResume
     - 执行首次 FlutterViewRun 的初始化操作
     - 开始首次在 FlutterView 上运行 Dart
     - ⚠️ 初始化 initialRoute
-      1. 先尝试从 host 去拿 initialRoute
+      1. 先尝试从 host（host 就是对应的 FlutterActivity / FlutterFragment） 去拿 initialRoute
       2. 尝试从 Intent 中去拿 initialRoute
       3. 默认是 `DEFAULT_INITIAL_ROUTE`,"/"
       4. 从引擎获取 `NavigationChannel`，设置 initialRoute
@@ -392,9 +393,13 @@ Fragment support library 会让应用程序多出 100k 的二进制大小，纯 
 
 所以你需要谨慎考虑添加代码到 delegate 还是 FlutterActivity / FlutterFragment。
 
+----------------------
 
 ## Flutter 应用生命周期状态 LifecycleChannel
 - **inactive 不活跃（onPause）**：在 FlutterActivity 或者 FlutterFragment onPause 的时机会进入 inactive 状态
-- **resumed 恢复（onResume）**：在 FlutterActivity 或者 FlutterFragment onResume 的时机会进入 inactive 状态
+- **resumed 恢复（onResume）**：在 FlutterActivity 或者 FlutterFragment onResume 的时机会进入 resume 状态
 - **paused 暂停（onStop）**：仅在 FlutterActivity 的 onStop 下会进入 paused 状态
 - **detached 移除（onDestroy / detachFromFlutterEngine）**：在 FlutterActivityAndFragmentDelegate 的 onDetach 的时候会被调用。最终是在 FlutterActivity 或者 FlutterFragment 的 detachFromFlutterEngine 或者 onDestroy 会进入 detached 状态
+
+
+
